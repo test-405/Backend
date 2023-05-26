@@ -42,8 +42,8 @@ class UserLogin(Resource):
         user = UserModel.find_by_username(data["username"])
 
         if user and pbkdf2_sha256.verify(data["password"], user.password):
-            access_token = create_access_token(identity=user.id, fresh=True)
-            refresh_token = create_refresh_token(user.id)
+            access_token = create_access_token(identity=user.user_id, fresh=True)
+            refresh_token = create_refresh_token(user.user_id)
             return {"access_token": access_token, "refresh_token": refresh_token}, 200
 
         return {"message": "Invalid Credentials!"}, 401
@@ -66,14 +66,14 @@ class User(Resource):
     """
 
     @classmethod
-    def get(cls, user_id):
-        user = UserModel.find_by_id(user_id)
+    def get(cls, id):
+        user = UserModel.find_by_id(id)
         if not user:
             return {"message": "User Not Found"}, 404
         return user.json(), 200
 
-    def delete(self, user_id):
-        user = UserModel.find_by_id(user_id)
+    def delete(self, id):
+        user = UserModel.find_by_id(id)
         if not user:
             return {"message": "User Not Found"}, 404
         user.delete_from_db()

@@ -2,15 +2,15 @@ from db import db
 
 
 class UserModel(db.Model):
-    __tablename__ = 'users'
+    __tablename__ = 'user'
 
-    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     password = db.Column(db.String(256), nullable=False)
 
     def json(self):
         return {
-            'id': self.id,
+            'user_id': self.user_id,
             'username': self.username
         }
 
@@ -19,8 +19,8 @@ class UserModel(db.Model):
         return cls.query.filter_by(username=username).first()
 
     @classmethod
-    def find_by_id(cls, _id):
-        return cls.query.filter_by(id=_id).first()
+    def find_by_id(cls, _user_id):
+        return cls.query.filter_by(user_id=_user_id).first()
 
     def save_to_db(self):
         db.session.add(self)
