@@ -1,0 +1,16 @@
+### Python ###
+# Byte-compiled / optimized / DLL files
+__pycache__/
+
+# Flask stuff:
+instance/
+.webassets-cache
+
+### VisualStudioCode ###
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/*.code-snippets
+.DS_Store
