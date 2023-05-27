@@ -118,5 +118,9 @@ api.add_resource(Hello, "/api/hello", "/", "/hello")
 api.add_resource(Library, "/api/library", endpoint="library")
 api.add_resource(Library, "/api/library/<int:library_id>", endpoint="library_by_id")
 
+# paper
+# api.add_resource(Paper, "/api/paper/<int:library_id>/<int:paper_id>")
+#api.add_resource(AddPaper, "/api/paper/add")
+
 if __name__ == "__main__":
     app.run(debug=True)
