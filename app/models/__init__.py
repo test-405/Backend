@@ -7,4 +7,5 @@ from models.comment import CommentModel
 
 from models.library_paper import LibraryPaperModel
 from models.user_library import UserLibraryModel
+from models.user_paper import UserPaperModel
 from models.paper_comment import PaperCommentModel

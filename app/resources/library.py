@@ -19,7 +19,7 @@ class Library(Resource):
         topic = request.args.get("topic", type=str)
 
         library_list = LibraryModel.query.filter_by(is_public=True).all()
-        library_list = [library.json() for library in library_list]
+        library_list = [library.to_json() for library in library_list]
 
         if topic:
             for library in library_list:
