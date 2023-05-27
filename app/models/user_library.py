@@ -8,9 +8,9 @@ class UserLibraryModel(db.Model):
     user_id = db.Column(db.Integer, nullable=False)
     library_id = db.Column(db.Integer, nullable=False)
 
-    def json(self):
+    def to_json(self):
         return {
-            'user_libraryt_id': self.user_library_id,
+            'user_library_id': self.user_library_id,
             'user_id': self.user_id,
             'library_id': self.library_id
         }

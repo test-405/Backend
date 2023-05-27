@@ -8,7 +8,7 @@ class UserModel(db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False)
     password = db.Column(db.String(256), nullable=False)
 
-    def json(self):
+    def to_json(self):
         return {
             'user_id': self.user_id,
             'username': self.username

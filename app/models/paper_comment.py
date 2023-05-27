@@ -8,7 +8,7 @@ class PaperCommentModel(db.Model):
     paper_id = db.Column(db.Integer, nullable=False)
     comment_id = db.Column(db.Integer, nullable=False)
 
-    def json(self):
+    def to_json(self):
         return {
             'paper_comment_id': self.paper_comment_id,
             'paper_id': self.paper_id,

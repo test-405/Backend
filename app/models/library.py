@@ -9,7 +9,7 @@ class LibraryModel(db.Model):
     description = db.Column(db.String(256), nullable=True)
     is_public = db.Column(db.Boolean, nullable=False)
 
-    def json(self):
+    def to_json(self):
         return {
             'library_id': self.library_id,
             'topic': self.topic,

@@ -11,7 +11,7 @@ class PaperModel(db.Model):
     year = db.Column(db.Integer, nullable=True)
     source = db.Column(db.String(256), nullable=True)
 
-    def json(self):
+    def to_json(self):
         return {
             'paper_id': self.paper_id,
             'title': self.title,

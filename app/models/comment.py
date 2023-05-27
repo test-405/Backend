@@ -9,7 +9,7 @@ class CommentModel(db.Model):
     time = db.Column(db.DateTime, nullable=False)
     is_markdown = db.Column(db.Boolean, nullable=False)
 
-    def json(self):
+    def to_json(self):
         return {
             'comment_id': self.comment_id,
             'content': self.content,
