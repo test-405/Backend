@@ -106,12 +106,12 @@ with app.app_context():
 
 # api.add_resource(Item, "/item/<string:name>")
 # api.add_resource(ItemList, "/item")
-api.add_resource(UserRegister, "/register")
-api.add_resource(UserLogin, "/login")
-api.add_resource(UserLogout, "/logout")
-api.add_resource(User, "/user/<int:user_id>")
-api.add_resource(TokenRefresh, "/refresh")
-api.add_resource(Hello, "/hello", "/")
+api.add_resource(UserRegister, "/api/user/register")
+api.add_resource(UserLogin, "/api/user/login")
+api.add_resource(UserLogout, "/api/user/logout")
+api.add_resource(User, "/api/user/<int:user_id>")
+api.add_resource(TokenRefresh, "/api/refresh")
+api.add_resource(Hello, "/api/hello", "/", "/hello")
 
 if __name__ == "__main__":
     app.run(debug=True)
