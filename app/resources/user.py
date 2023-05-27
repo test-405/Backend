@@ -25,14 +25,29 @@ class UserRegister(Resource):
         data = _user_parser.parse_args()
 
         if UserModel.find_by_username(data["username"]):
-            return {"message": "A user with that username already exists"}, 400
+            response = {
+                "code": 1,
+                "error_msg": "A user with that username already exists",
+                "data": {},
+            }
+            return response, 400
 
         user = UserModel(
             username=data["username"], password=pbkdf2_sha256.hash(data["password"])
         )
         user.save_to_db()
 
-        return {"message": "User created successfully."}, 201
+        response = {
+            "code": 0,
+            "error_msg": "",
+            "data": {
+                "user_id": user.user_id,
+                "username": user.username,
+                "password": user.password,
+            },
+        }
+
+        return response, 201
 
 
 class UserLogin(Resource):
@@ -44,17 +59,24 @@ class UserLogin(Resource):
         if user and pbkdf2_sha256.verify(data["password"], user.password):
             access_token = create_access_token(identity=user.user_id, fresh=True)
             refresh_token = create_refresh_token(user.user_id)
-            return {"access_token": access_token, "refresh_token": refresh_token}, 200
+            response = {
+                "code": 0,
+                "error_msg": "",
+                "data": {"access_token": access_token, "refresh_token": refresh_token},
+            }
+            return response, 200
 
-        return {"message": "Invalid Credentials!"}, 401
+        response = {"code": 1, "error_msg": "Invalid Credentials!", "data": {}}
+        return response, 401
 
 
 class UserLogout(Resource):
-    @jwt_required() # 这个接口需要验证token(Json Web Token)
+    @jwt_required()
     def post(self):
         jti = get_jwt()["jti"]
         BLOCKLIST.add(jti)
-        return {"message": "Successfully logged out"}, 200
+        response = {"code": 0, "error_msg": "", "data": {}}
+        return response, 200
 
 
 class User(Resource):
@@ -69,15 +91,27 @@ class User(Resource):
     def get(cls, id):
         user = UserModel.find_by_id(id)
         if not user:
-            return {"message": "User Not Found"}, 404
-        return user.json(), 200
+            response = {"code": 1, "error_msg": "User Not Found", "data": {}}
+            return response, 404
+        response = {
+            "code": 0,
+            "error_msg": "",
+            "data": {
+                "user_id": user.user_id,
+                "username": user.username,
+                "password": user.password,
+            },
+        }
+        return response, 200
 
     def delete(self, id):
         user = UserModel.find_by_id(id)
         if not user:
-            return {"message": "User Not Found"}, 404
+            response = {"code": 1, "error_msg": "User Not Found", "data": {}}
+            return response, 404
         user.delete_from_db()
-        return {"message": "User deleted."}, 200
+        response = {"code": 0, "error_msg": "", "data": {}}
+        return response, 200
 
 
 class TokenRefresh(Resource):
@@ -85,4 +119,5 @@ class TokenRefresh(Resource):
     def post(self):
         current_user = get_jwt_identity()
         new_token = create_access_token(identity=current_user, fresh=False)
-        return {"access_token": new_token}, 200
+        response = {"code": 0, "error_msg": "", "data": {"access_token": new_token}}
+        return response, 200
