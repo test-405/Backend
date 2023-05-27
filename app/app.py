@@ -9,6 +9,7 @@ from blocklist import BLOCKLIST
 # TODO
 from resources.hello import Hello
 from resources.user import UserRegister, UserLogin, User, TokenRefresh, UserLogout
+from resources.library import Library
 from config import mysqlConfig
 
 app = Flask(__name__)
@@ -112,6 +113,10 @@ api.add_resource(UserLogout, "/api/user/logout")
 api.add_resource(User, "/api/user/<int:user_id>")
 api.add_resource(TokenRefresh, "/api/refresh")
 api.add_resource(Hello, "/api/hello", "/", "/hello")
+
+# library
+api.add_resource(Library, "/api/library", endpoint="library")
+api.add_resource(Library, "/api/library/<int:library_id>", endpoint="library_by_id")
 
 if __name__ == "__main__":
     app.run(debug=True)
