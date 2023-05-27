@@ -11,6 +11,7 @@ from resources.hello import Hello
 from resources.user import UserRegister, UserLogin, User, TokenRefresh, UserLogout
 from resources.library import Library
 from resources.paper import Paper
+from resources.comment import Comment
 from config import mysqlConfig
 
 app = Flask(__name__)
@@ -122,6 +123,10 @@ api.add_resource(Library, "/api/library/<int:library_id>", endpoint="library_by_
 # paper
 api.add_resource(Paper, "/api/paper", endpoint="paper")
 api.add_resource(Paper, "/api/paper/<int:paper_id>", endpoint="paper_by_id")
+
+# comment 
+api.add_resource(Comment, "/api/comment", endpoint="comment")
+api.add_resource(Comment, "/api/comment/<int:comment_id>", endpoint="comment_by_id")
 
 if __name__ == "__main__":
     app.run(debug=True)
