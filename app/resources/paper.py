@@ -48,11 +48,11 @@ class Paper(Resource):
     def post(self):
         parser = reqparse.RequestParser()
         parser.add_argument("library_id", type=int, required=True, help="This field cannot be blank.")
-        parser.add_argument("title", type=str, required=True, help="This field cannot be blank.")
-        parser.add_argument("authors", type=str, required=True, help="This field cannot be blank.")
-        parser.add_argument("publisher", type=str, required=True, help="This field cannot be blank.")
-        parser.add_argument("year", type=int, required=True, help="This field cannot be blank.")
-        parser.add_argument("source", type=str, required=True, help="This field cannot be blank.")
+        parser.add_argument("title", type=str, required=False)
+        parser.add_argument("authors", type=str, required=False)
+        parser.add_argument("publisher", type=str, required=False)
+        parser.add_argument("year", type=int, required=False)
+        parser.add_argument("source", type=str, required=False)
         data = parser.parse_args()
 
         uid = get_jwt_identity()
