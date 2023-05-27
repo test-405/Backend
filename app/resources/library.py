@@ -88,7 +88,8 @@ class Library(Resource):
                     library.description = data["desc"]
                 if data["is_public"] is not None:
                     library.is_public = data["is_public"]
-            except:
+            except Exception as e:
+                self.logger.error(str(e))
                 session.rollback()
                 response = {
                     "code": 1,
@@ -110,23 +111,24 @@ class Library(Resource):
         uid = get_jwt_identity()
         self.logger.info("User {} is deleting library {}".format(uid, library_id))
 
-        user_library = UserLibraryModel.query.filter_by(user_id=uid, library_id=library_id).first()
-        if user_library is None:
-            response = {
-                "code": 1,
-                "error_msg": "User is not authorized to delete this library",
-                "data": {},
-            }
-            return response, 403
-        
         Session = sessionmaker(bind=db.engine)
         with Session() as session:
             session.begin()
             try:
+                user_library = session.query(UserLibraryModel).filter_by(user_id=uid, library_id=library_id).first()
+                if user_library is None:
+                    response = {
+                        "code": 1,
+                        "error_msg": "User is not authorized to delete this library",
+                        "data": {},
+                    }
+                    return response, 403
+                
                 library = session.query(LibraryModel).filter_by(library_id=library_id).first()
                 session.delete(library)
                 session.delete(user_library)
-            except:
+            except Exception as e:
+                self.logger.error(str(e))
                 session.rollback()
                 response = {
                     "code": 1,
