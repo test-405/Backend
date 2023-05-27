@@ -8,6 +8,7 @@ from models import LibraryModel, UserLibraryModel
 
 from utils.logz import create_logger
 
+
 class Library(Resource):
     def __init__(self):
         self.logger = create_logger("library")
@@ -25,23 +26,23 @@ class Library(Resource):
                 library["ratio"] = fuzz.ratio(topic, library["topic"])
             library_list = sorted(library_list, key=lambda x: x["ratio"], reverse=True)
 
-        library_list = library_list[:(page_num * page_size)]
-        response = {
-            "code": 0,
-            "error_msg": "",
-            "data": {
-                "libraries": library_list
-            }
-        }
-        
+        library_list = library_list[: (page_num * page_size)]
+        response = {"code": 0, "error_msg": "", "data": {"libraries": library_list}}
+
         return response, 200
-    
+
     @jwt_required()
     def post(self):
         parser = reqparse.RequestParser()
-        parser.add_argument("topic", type=str, required=True, help="This field cannot be blank.")
-        parser.add_argument("desc", type=str, required=True, help="This field cannot be blank.")
-        parser.add_argument("is_public", type=bool, required=True, help="This field cannot be blank.")
+        parser.add_argument(
+            "topic", type=str, required=True, help="This field cannot be blank."
+        )
+        parser.add_argument(
+            "desc", type=str, required=True, help="This field cannot be blank."
+        )
+        parser.add_argument(
+            "is_public", type=bool, required=True, help="This field cannot be blank."
+        )
         data = parser.parse_args()
 
         uid = get_jwt_identity()
@@ -52,11 +53,9 @@ class Library(Resource):
         )
         library.save_to_db()
 
-        user_library = UserLibraryModel(
-            user_id=uid, library_id=library.library_id
-        )
+        user_library = UserLibraryModel(user_id=uid, library_id=library.library_id)
         user_library.save_to_db()
-        
+
     @jwt_required()
     def put(self, library_id):
         parser = reqparse.RequestParser()
@@ -68,7 +67,9 @@ class Library(Resource):
         uid = get_jwt_identity()
         self.logger.info("User {} is updating library {}".format(uid, library_id))
 
-        user_library = UserLibraryModel.query.filter_by(user_id=uid, library_id=library_id).first()
+        user_library = UserLibraryModel.query.filter_by(
+            user_id=uid, library_id=library_id
+        ).first()
         if user_library is None:
             response = {
                 "code": 1,
@@ -81,14 +82,17 @@ class Library(Resource):
         with Session() as session:
             session.begin()
             try:
-                library = session.query(LibraryModel).filter_by(library_id=library_id).first()
+                library = (
+                    session.query(LibraryModel).filter_by(library_id=library_id).first()
+                )
                 if data["topic"] is not None:
                     library.topic = data["topic"]
                 if data["desc"] is not None:
                     library.description = data["desc"]
                 if data["is_public"] is not None:
                     library.is_public = data["is_public"]
-            except:
+            except Exception as e:
+                self.logger.error(str(e))
                 session.rollback()
                 response = {
                     "code": 1,
@@ -97,36 +101,39 @@ class Library(Resource):
                 }
                 return response, 500
             else:
-                response = {
-                    "code": 0,
-                    "error_msg": "",
-                    "data": library.to_json()
-                }
+                response = {"code": 0, "error_msg": "", "data": library.to_json()}
                 session.commit()
                 return response, 200
-    
+
     @jwt_required()
     def delete(self, library_id):
         uid = get_jwt_identity()
         self.logger.info("User {} is deleting library {}".format(uid, library_id))
 
-        user_library = UserLibraryModel.query.filter_by(user_id=uid, library_id=library_id).first()
-        if user_library is None:
-            response = {
-                "code": 1,
-                "error_msg": "User is not authorized to delete this library",
-                "data": {},
-            }
-            return response, 403
-        
         Session = sessionmaker(bind=db.engine)
         with Session() as session:
             session.begin()
             try:
-                library = session.query(LibraryModel).filter_by(library_id=library_id).first()
+                user_library = (
+                    session.query(UserLibraryModel)
+                    .filter_by(user_id=uid, library_id=library_id)
+                    .first()
+                )
+                if user_library is None:
+                    response = {
+                        "code": 1,
+                        "error_msg": "User is not authorized to delete this library",
+                        "data": {},
+                    }
+                    return response, 403
+
+                library = (
+                    session.query(LibraryModel).filter_by(library_id=library_id).first()
+                )
                 session.delete(library)
                 session.delete(user_library)
-            except:
+            except Exception as e:
+                self.logger.error(str(e))
                 session.rollback()
                 response = {
                     "code": 1,
@@ -142,10 +149,3 @@ class Library(Resource):
                 }
                 session.commit()
                 return response, 200
-        
-        
-
-
-
-
-
