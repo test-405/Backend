@@ -8,7 +8,7 @@ class LibraryPaperModel(db.Model):
     library_id = db.Column(db.Integer, nullable=False)
     paper_id = db.Column(db.Integer, nullable=False)
 
-    def json(self):
+    def to_json(self):
         return {
             'library_paper_id': self.library_paper_id,
             'library_id': self.library_id,
