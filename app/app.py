@@ -10,6 +10,7 @@ from blocklist import BLOCKLIST
 from resources.hello import Hello
 from resources.user import UserRegister, UserLogin, User, TokenRefresh, UserLogout
 from resources.library import Library
+from resources.paper import Paper
 from config import mysqlConfig
 
 app = Flask(__name__)
@@ -117,6 +118,10 @@ api.add_resource(Hello, "/api/hello", "/", "/hello")
 # library
 api.add_resource(Library, "/api/library", endpoint="library")
 api.add_resource(Library, "/api/library/<int:library_id>", endpoint="library_by_id")
+
+# paper
+api.add_resource(Paper, "/api/paper", endpoint="paper")
+api.add_resource(Paper, "/api/paper/<int:paper_id>", endpoint="paper_by_id")
 
 if __name__ == "__main__":
     app.run(debug=True)
