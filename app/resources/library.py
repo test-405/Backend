@@ -56,6 +56,13 @@ class Library(Resource):
         user_library = UserLibraryModel(user_id=uid, library_id=library.library_id)
         user_library.save_to_db()
 
+        response = {
+            "code": 0,
+            "error_msg": "",
+            "data": library.to_json(),
+        }
+        return response, 200
+
     @jwt_required()
     def put(self, library_id):
         parser = reqparse.RequestParser()
