@@ -1,0 +1,71 @@
+name: Backend Test
+
+on:
+  push:
+    branches:
+      - master
+      - test/*
+  pull_request:
+    branches:
+      - master
+      - test/*
+  workflow_dispatch:
+
+env:
+  MYSQL_DATABASE: test_db
+  MYSQL_USER: root
+  MYSQL_PASSWORD: root
+  RESTORE: .test.sql
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🔥 Initialize MySQL
+        run: sudo systemctl start mysql.service
+
+      - name: 📌 Initialize first database
+        run: |
+          mysql -e 'CREATE DATABASE ${{ env.MYSQL_DATABASE }};' \
+          -u${{ env.MYSQL_USER }} -p${{ env.MYSQL_PASSWORD }}
+      - name: 🚀 Boost user
+        run: |
+          mysql -e "ALTER USER '${{ env.MYSQL_USER }}'@'localhost' \
+          IDENTIFIED WITH mysql_native_password BY '${{ env.MYSQL_PASSWORD }}';" \
+          -u${{ env.MYSQL_USER }} -p${{ env.MYSQL_PASSWORD }}
+      - name: 🍺 Check out repository code
+        uses: actions/checkout@v3
+
+      - name: 🔨 Setup Python environment
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+
+      - name: 🪛 Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: 🔫 Run test_hello
+        run: |
+          MYSQL_RESTORE_SOURCE=$RESTORE \
+          MYSQL_USER=$MYSQL_USER \
+          MYSQL_PASSWORD=$MYSQL_PASSWORD \
+          MYSQL_DATABASE=$MYSQL_DATABASE \
+          python -m unittest app/test/test_hello.py \
+      
+      - name: 🔫 Run test_user
+        run: |
+          MYSQL_RESTORE_SOURCE=$RESTORE \
+          MYSQL_USER=$MYSQL_USER \
+          MYSQL_PASSWORD=$MYSQL_PASSWORD \
+          MYSQL_DATABASE=$MYSQL_DATABASE \
+          python -m unittest app/test/test_user.py \
+        
+      - name: 🔫 Run test_library
+        run: |
+          MYSQL_RESTORE_SOURCE=$RESTORE \
+          MYSQL_USER=$MYSQL_USER \
+          MYSQL_PASSWORD=$MYSQL_PASSWORD \
+          MYSQL_DATABASE=$MYSQL_DATABASE \
+          python -m unittest app/test/test_library.py \
