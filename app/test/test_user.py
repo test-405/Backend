@@ -1,8 +1,8 @@
-from .basic_test import BasicTest, username, password
+from .basic_test import BasicTest
 
 data = {
-    "username": username,
-    "password": password
+    "username": "haohao",
+    "password": "123456"
 }
 
 class UserUtil(BasicTest):
