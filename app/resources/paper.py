@@ -14,32 +14,87 @@ class Paper(Resource):
 
     # 查询论文
     # library_id(required), page_num(required), page_size(required), title, ...
+    # fix: 需要检查library_id对应的library, TODO:重复代码优化？
     def get(self):
         library_id = request.args.get("library_id", type=int)
         page_num = request.args.get("page_num", type=int)
         page_size = request.args.get("page_size", type=int)
         title = request.args.get("title", type=str)
-        
-        # 根据library_id查询关联表，得到librarypaper_list，再根据paper_id查询paper表，得到paper_list
-        librarypaper_list = LibraryPaperModel.query.filter_by(library_id=library_id).all()
-        paper_id_list = [each.json()['paper_id'] for each in librarypaper_list]
-        paper_list = PaperModel.query.filter(PaperModel.paper_id.in_(paper_id_list)).all()
 
-        # 如果查询提供了title，则对paper_list进行模糊匹配
-        if title:
-            for paper in paper_list:
-                paper["ratio"] = fuzz.ratio(title, paper["title"])
-            paper_list = sorted(paper_list, key=lambda x: x["ratio"], reverse=True)
-        
-        paper_list = paper_list[:(page_num) * page_size]
-        response = {
-            "code": 0,
-            "error_msg": "string",
-            "data": {
-                "papers": paper_list
+        library = LibraryModel.query.filter_by(library_id=library_id).first()
+
+        # 检查library_id对应的library是否存在
+        if library is None:
+            response = {
+                "code": 1,
+                "error_msg": "library_id not found",
+                "data": {},
             }
-        }
-        return response, 200
+            return response, 403
+        
+        # 如果是public的library，可以直接访问
+        if library.to_json()['is_public']:
+            # 根据library_id查询关联表，得到librarypaper_list，再根据paper_id查询paper表，得到paper_list
+            librarypaper_list = LibraryPaperModel.query.filter_by(library_id=library_id).all()
+            paper_id_list = [each.to_json()['paper_id'] for each in librarypaper_list]
+            paper_list = PaperModel.query.filter(PaperModel.paper_id.in_(paper_id_list)).all()
+            paper_list = [each.to_json() for each in paper_list]
+
+            # 如果查询提供了title，则对paper_list进行模糊匹配
+            if title:
+                for paper in paper_list:
+                    paper["ratio"] = fuzz.ratio(title, paper["title"])
+                paper_list = sorted(paper_list, key=lambda x: x["ratio"], reverse=True)
+            
+            paper_list = paper_list[:(page_num) * page_size]
+            response = {
+                "code": 0,
+                "error_msg": "string",
+                "data": {
+                    "papers": paper_list
+                }
+            }
+            return response, 200
+
+        # 辅助函数：private_check
+        @jwt_required()
+        def private_check():
+            uid = get_jwt_identity()
+            if uid:
+                user_library = UserLibraryModel.query.filter_by(user_id=uid, library_id=library_id).first()
+                if user_library is not None:
+                    return True
+            return False
+        
+        if private_check():
+            # 根据library_id查询关联表，得到librarypaper_list，再根据paper_id查询paper表，得到paper_list
+            librarypaper_list = LibraryPaperModel.query.filter_by(library_id=library_id).all()
+            paper_id_list = [each.to_json()['paper_id'] for each in librarypaper_list]
+            paper_list = PaperModel.query.filter(PaperModel.paper_id.in_(paper_id_list)).all()
+            paper_list = [each.to_json() for each in paper_list]
+
+            # 如果查询提供了title，则对paper_list进行模糊匹配
+            if title:
+                for paper in paper_list:
+                    paper["ratio"] = fuzz.ratio(title, paper["title"])
+                paper_list = sorted(paper_list, key=lambda x: x["ratio"], reverse=True)
+            
+            paper_list = paper_list[:(page_num) * page_size]
+            response = {
+                "code": 0,
+                "error_msg": "string",
+                "data": {
+                    "papers": paper_list
+                }
+            }
+            return response, 200
+        else:
+            response = {
+                "code": 1,
+                "error_msg": "permission denied: private library can only be accessed by owner",
+                "data": {},
+            }
+            return response, 403
 
     # 添加论文
     # library_id(required), title(required), authors(required), publisher(required), year(required), source(required)
@@ -104,6 +159,8 @@ class Paper(Resource):
     
     # 修改论文
     # paper_id(required), title(required), library_id is not allowed to modify.
+    # [fix]用户可以修改自己提交的论文
+    # TODO:用户应该也可以修改自己库中别人的论文
     @jwt_required()
     def put(self, paper_id):
         parser = reqparse.RequestParser()
@@ -123,6 +180,15 @@ class Paper(Resource):
             session.begin()
             try:
                 paper = session.query(PaperModel).filter_by(paper_id=paper_id).first()
+                user_paper = session.query(UserPaperModel).filter_by(paper_id=paper_id).first()
+                if user_paper.to_json()['user_id'] != uid:
+                    response = {
+                        "code": 1,
+                        "error_msg": "permission denied: user can only modify his own paper",
+                        "data": {},
+                    }
+                    return response, 403
+                
                 if data["title"] is not None:
                     paper.title = data["title"]
                 if data["authors"] is not None:
@@ -152,8 +218,8 @@ class Paper(Resource):
                 return response, 200
     
     # 删除论文
-    # 用户只能删除自己创建的文献库下的论文
-    # 根据paper_id，找到所在的lib，先检验lib是否存在并属于该用户
+    # [fix]用户能删除自己的论文
+    # 用户可以删除自己库下的所有论文
     @jwt_required()
     def delete(self, paper_id):
         uid = get_jwt_identity()
@@ -164,28 +230,35 @@ class Paper(Resource):
         with Session() as session:
             session.begin()
             try:
+                paper = session.query(PaperModel).filter_by(paper_id=paper_id).first()
+                user_paper = session.query(UserPaperModel).filter_by(paper_id=paper_id).first()
                 library_paper = session.query(LibraryPaperModel).filter_by(paper_id=paper_id).first()
-                library_id = library_paper.json()['library_id']
-                if library_id is None:
+
+                library_id = library_paper.to_json()['library_id']
+                user_library = session.query(UserLibraryModel).filter_by(library_id=library_id).first()
+
+                # paper不存在
+                if paper is None:
                     response = {
                         "code": 1,
-                        "error_msg": "This paper is not in any librarys ",
+                        "error_msg": "Paper {} does not exist".format(paper_id),
+                        "data": {},
+                    }
+                    return response, 404
+                # paper不属于该user，且paper所在的library不属于该user
+                if user_paper.to_json()['user_id'] != uid and user_library.to_json()['user_id'] != uid:
+                    response = {
+                        "code": 1,
+                        "error_msg": "permission denied: the paper is not yours or in your library",
                         "data": {},
                     }
                     return response, 403
                 
-                user_library = session.query(UserLibraryModel).filter_by(user_id=uid, library_id=library_id).first()
-                if user_library is None:
-                    response = {
-                        "code": 1,
-                        "error_msg": "This paper is not in your librarys ",
-                        "data": {},
-                    }
-                    return response, 403
-        
-                paper = session.query(PaperModel).filter_by(paper_id=paper_id).first()
+                # 该paper属于该user，或所在library属于该user，均可删除
                 session.delete(paper)
+                session.delete(user_paper)
                 session.delete(library_paper)
+
             except Exception as e:
                 self.logger.error(str(e))
                 session.rollback()
