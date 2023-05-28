@@ -8,7 +8,7 @@ class UserPaperModel(db.Model):
     user_id = db.Column(db.Integer, nullable=False)
     paper_id = db.Column(db.Integer, nullable=False)
 
-    def json(self):
+    def to_json(self):
         return {
             'user_paper_id': self.user_paper_id,
             'user_id': self.user_id,
