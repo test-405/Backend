@@ -14,85 +14,32 @@ class Paper(Resource):
 
     # 查询论文
     # library_id(required), page_num(required), page_size(required), title, ...
-    # fix: 需要检查library_id对应的library, TODO:重复代码优化？
     def get(self):
         library_id = request.args.get("library_id", type=int)
         page_num = request.args.get("page_num", type=int)
         page_size = request.args.get("page_size", type=int)
         title = request.args.get("title", type=str)
-
-        library = LibraryModel.query.filter_by(library_id=library_id).first()
-
-        # 检查library_id对应的library是否存在
-        if library is None:
-            response = {
-                "code": 1,
-                "error_msg": "library_id not found",
-                "data": {},
-            }
-            return response, 403
         
-        # 如果是public的library，可以直接访问
-        if library.to_json()['is_public']:
-            # 根据library_id查询关联表，得到librarypaper_list，再根据paper_id查询paper表，得到paper_list
-            librarypaper_list = LibraryPaperModel.query.filter_by(library_id=library_id).all()
-            paper_id_list = [each.json()['paper_id'] for each in librarypaper_list]
-            paper_list = PaperModel.query.filter(PaperModel.paper_id.in_(paper_id_list)).all()
+        # 根据library_id查询关联表，得到librarypaper_list，再根据paper_id查询paper表，得到paper_list
+        librarypaper_list = LibraryPaperModel.query.filter_by(library_id=library_id).all()
+        paper_id_list = [each.json()['paper_id'] for each in librarypaper_list]
+        paper_list = PaperModel.query.filter(PaperModel.paper_id.in_(paper_id_list)).all()
 
-            # 如果查询提供了title，则对paper_list进行模糊匹配
-            if title:
-                for paper in paper_list:
-                    paper["ratio"] = fuzz.ratio(title, paper["title"])
-                paper_list = sorted(paper_list, key=lambda x: x["ratio"], reverse=True)
-            
-            paper_list = paper_list[:(page_num) * page_size]
-            response = {
-                "code": 0,
-                "error_msg": "string",
-                "data": {
-                    "papers": paper_list
-                }
-            }
-            return response, 200
-
-        # 辅助函数：private_check
-        @jwt_required()
-        def private_check():
-            uid = get_jwt_identity()
-            if uid:
-                user_library = UserLibraryModel.query.filter_by(user_id=uid, library_id=library_id).first()
-                if user_library is not None:
-                    return True
-            return False
+        # 如果查询提供了title，则对paper_list进行模糊匹配
+        if title:
+            for paper in paper_list:
+                paper["ratio"] = fuzz.ratio(title, paper["title"])
+            paper_list = sorted(paper_list, key=lambda x: x["ratio"], reverse=True)
         
-        if private_check():
-            # 根据library_id查询关联表，得到librarypaper_list，再根据paper_id查询paper表，得到paper_list
-            librarypaper_list = LibraryPaperModel.query.filter_by(library_id=library_id).all()
-            paper_id_list = [each.json()['paper_id'] for each in librarypaper_list]
-            paper_list = PaperModel.query.filter(PaperModel.paper_id.in_(paper_id_list)).all()
-
-            # 如果查询提供了title，则对paper_list进行模糊匹配
-            if title:
-                for paper in paper_list:
-                    paper["ratio"] = fuzz.ratio(title, paper["title"])
-                paper_list = sorted(paper_list, key=lambda x: x["ratio"], reverse=True)
-            
-            paper_list = paper_list[:(page_num) * page_size]
-            response = {
-                "code": 0,
-                "error_msg": "string",
-                "data": {
-                    "papers": paper_list
-                }
+        paper_list = paper_list[:(page_num) * page_size]
+        response = {
+            "code": 0,
+            "error_msg": "string",
+            "data": {
+                "papers": paper_list
             }
-            return response, 200
-        else:
-            response = {
-                "code": 1,
-                "error_msg": "permission denied: private library can only be accessed by owner",
-                "data": {},
-            }
-            return response, 403
+        }
+        return response, 200
 
     # 添加论文
     # library_id(required), title(required), authors(required), publisher(required), year(required), source(required)
