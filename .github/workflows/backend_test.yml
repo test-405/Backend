@@ -51,7 +51,7 @@ jobs:
       - name: Run test_hello
         run: |
           MYSQL_RESTORE_SOURCE=$RESTORE \
-          MYSQL_USERNAME=$MYSQL_USER \
+          MYSQL_USER=$MYSQL_USER \
           MYSQL_PASSWORD=$MYSQL_PASSWORD \
           MYSQL_DATABASE=$MYSQL_DATABASE \
           python -m unittest app/test/test_hello.py \
@@ -59,7 +59,7 @@ jobs:
       - name: Run test_user
         run: |
           MYSQL_RESTORE_SOURCE=$RESTORE \
-          MYSQL_USERNAME=$MYSQL_USER \
+          MYSQL_USER=$MYSQL_USER \
           MYSQL_PASSWORD=$MYSQL_PASSWORD \
           MYSQL_DATABASE=$MYSQL_DATABASE \
           python -m unittest app/test/test_user.py \
@@ -67,7 +67,7 @@ jobs:
       - name: Run test_library
         run: |
           MYSQL_RESTORE_SOURCE=$RESTORE \
-          MYSQL_USERNAME=$MYSQL_USER \
+          MYSQL_USER=$MYSQL_USER \
           MYSQL_PASSWORD=$MYSQL_PASSWORD \
           MYSQL_DATABASE=$MYSQL_DATABASE \
           python -m unittest app/test/test_library.py \

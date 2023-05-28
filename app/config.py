@@ -6,8 +6,8 @@ load_dotenv()
 ##################
 # MYSQL SETTINGS #
 ##################
-MYSQL_USER = os.getenv("DB_USER", default="root")
-MYSQL_PASSWORD = os.getenv("DB_PASSWORD", default="")
+MYSQL_USER = os.getenv("MYSQL_USER", default="root")
+MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD", default="")
 MYSQL_HOST = os.getenv("MYSQL_HOST", default="localhost")
 MYSQL_DATABASE = os.getenv("MYSQL_DATABASE", default="paper_test")
 
@@ -31,7 +31,7 @@ if GLOBAL_CONFIG_JSON != "":
 
 mysqlConfig = "mysql+pymysql://{}:{}@{}/{}?charset=utf8mb4" \
     .format(MYSQL_USER, MYSQL_PASSWORD, MYSQL_HOST, MYSQL_DATABASE)
-
+print(f"+++++++++{mysqlConfig}")
 class Config:
     SQLALCHEMY_DATABASE_URI = mysqlConfig
     SQLALCHEMY_TRACK_MODIFICATIONS = False
