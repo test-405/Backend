@@ -12,8 +12,8 @@ on:
 
 env:
   MYSQL_DATABASE: test_db
-  DB_USER: root
-  DB_PASSWORD: root
+  MYSQL_USER: root
+  MYSQL_PASSWORD: root
   RESTORE: .test.sql
 
 jobs:
@@ -27,13 +27,13 @@ jobs:
       - name: 📌 Initialize first database
         run: |
           mysql -e 'CREATE DATABASE ${{ env.MYSQL_DATABASE }};' \
-          -u${{ env.DB_USER }} -p${{ env.DB_PASSWORD }}
+          -u${{ env.MYSQL_USER }} -p${{ env.MYSQL_PASSWORD }}
 
       - name: 🚀 Boost user
         run: |
-          mysql -e "ALTER USER '${{ env.DB_USER }}'@'localhost' \
-          IDENTIFIED WITH mysql_native_password BY '${{ env.DB_PASSWORD }}';" \
-          -u${{ env.DB_USER }} -p${{ env.DB_PASSWORD }}
+          mysql -e "ALTER USER '${{ env.MYSQL_USER }}'@'localhost' \
+          IDENTIFIED WITH mysql_native_password BY '${{ env.MYSQL_PASSWORD }}';" \
+          -u${{ env.MYSQL_USER }} -p${{ env.MYSQL_PASSWORD }}
 
       - name: 🍺 Check out repository code
         uses: actions/checkout@v3
@@ -51,23 +51,23 @@ jobs:
       - name: Run test_hello
         run: |
           MYSQL_RESTORE_SOURCE=$RESTORE \
-          MYSQL_USERNAME=$DB_USER \
-          MYSQL_PASSWORD=$DB_PASSWORD \
-          MYSQL_ACTIVE_DATABASE=$MYSQL_DATABASE \
+          MYSQL_USERNAME=$MYSQL_USER \
+          MYSQL_PASSWORD=$MYSQL_PASSWORD \
+          MYSQL_DATABASE=$MYSQL_DATABASE \
           python -m unittest app/test/test_hello.py \
       
       - name: Run test_user
         run: |
           MYSQL_RESTORE_SOURCE=$RESTORE \
-          MYSQL_USERNAME=$DB_USER \
-          MYSQL_PASSWORD=$DB_PASSWORD \
-          MYSQL_ACTIVE_DATABASE=$MYSQL_DATABASE \
+          MYSQL_USERNAME=$MYSQL_USER \
+          MYSQL_PASSWORD=$MYSQL_PASSWORD \
+          MYSQL_DATABASE=$MYSQL_DATABASE \
           python -m unittest app/test/test_user.py \
         
       - name: Run test_library
         run: |
           MYSQL_RESTORE_SOURCE=$RESTORE \
-          MYSQL_USERNAME=$DB_USER \
-          MYSQL_PASSWORD=$DB_PASSWORD \
-          MYSQL_ACTIVE_DATABASE=$MYSQL_DATABASE \
+          MYSQL_USERNAME=$MYSQL_USER \
+          MYSQL_PASSWORD=$MYSQL_PASSWORD \
+          MYSQL_DATABASE=$MYSQL_DATABASE \
           python -m unittest app/test/test_library.py \
