@@ -6,8 +6,8 @@ load_dotenv()
 ##################
 # MYSQL SETTINGS #
 ##################
-MYSQL_USER = os.getenv("DB_USER", default="root")
-MYSQL_PASSWORD = os.getenv("DB_PASSWORD", default="")
+MYSQL_USER = os.getenv("MYSQL_USER", default="root")
+MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD", default="")
 MYSQL_HOST = os.getenv("MYSQL_HOST", default="localhost")
 MYSQL_DATABASE = os.getenv("MYSQL_DATABASE", default="paper_test")
 
