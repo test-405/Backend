@@ -5,3 +5,5 @@ def init_db(app=None):
     with app.app_context():
         import models
         db.create_all()
+
+    return db

@@ -15,7 +15,7 @@ app = Flask(__name__)
 app.config.from_object('config.Config')
 CORS(app)
 
-mysql.init_db(app)
+db = mysql.init_db(app)
 jwt.init_jwt(app)
 
 api = Api(app)

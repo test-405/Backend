@@ -64,3 +64,5 @@ def init_jwt(app=None):
             ),
             401,
         )
+
+    return jwt
