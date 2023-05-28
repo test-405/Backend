@@ -2,9 +2,8 @@ from .basic_test import BasicTest
 from .test_user import UserUtil
 
 class LibraryUtil(UserUtil):
-    def setUp(self):
-        super().setUp()
-        self.build_jwt_head()
+    def __init__(self, username, password):
+        super().__init__(username, password)
 
     def create_library(self, topic="", desc="", is_public=True):
         self.headers['Content-Type'] = 'application/json'
@@ -49,26 +48,31 @@ class LibraryUtil(UserUtil):
         response = self.app.delete(f"/api/library/{library_id}", headers=self.headers)
         return response
 
-class TestLibrary(LibraryUtil):
+class TestLibrary(BasicTest):
+    def setUp(self):
+        super().setUp()
+        self.library_util = LibraryUtil("test", "test")
+        self.library_util.build_jwt_head()
+
     def test_create_library(self):
-        response = self.create_library()
+        response = self.library_util.create_library()
         self.assertEqual(response.status_code, 200)
 
     def test_get_library(self):
-        self.create_multiple_library(10)
-        response = self.get_library()
+        self.library_util.create_multiple_library(10)
+        response = self.library_util.get_library()
         self.assertEqual(response.status_code, 200)
     
     def test_modify_library(self):
-        response = self.create_library()
+        response = self.library_util.create_library()
         library_id = response.json["data"]["library_id"]
-        response = self.modify_library(library_id, topic="hhh")
+        response = self.library_util.modify_library(library_id, topic="hhh")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json["data"]["topic"], "hhh")
 
     def test_delete_library(self):
-        response = self.create_library()
+        response = self.library_util.create_library()
         library_id = response.json["data"]["library_id"]
-        response = self.delete_library(library_id)
+        response = self.library_util.delete_library(library_id)
         self.assertEqual(response.status_code, 200)
     
