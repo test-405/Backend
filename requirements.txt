@@ -8,3 +8,4 @@ pymysql==1.0.3
 Flask-JWT-Extended==4.4.4
 fuzzywuzzy==0.18.0
 python-dotenv==1.0.0
+pymongo==4.3.3

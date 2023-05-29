@@ -1,0 +1,7 @@
+{
+    "mongodb": {
+        "pdf_db": "pdf_db",
+        "pdf_coll": "pdf_coll"
+    },
+    "test": false
+}

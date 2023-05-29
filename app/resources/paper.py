@@ -2,7 +2,13 @@ from flask_restful import Resource, reqparse, request
 from flask_jwt_extended import get_jwt_identity, jwt_required, get_jwt_identity
 from sqlalchemy.orm import sessionmaker
 from fuzzywuzzy import fuzz
-from db import db
+from bson.objectid import ObjectId
+from gridfs import GridFS
+from gridfs.errors import NoFile
+from werkzeug import Response
+
+from db import db, mongo
+from config import GLOBAL_CONFIG
 from models import PaperModel, LibraryModel, LibraryPaperModel, UserLibraryModel, UserPaperModel
 
 from utils.logz import create_logger
@@ -256,3 +262,68 @@ class Paper(Resource):
                 }
                 session.commit()
                 return response, 200
+            
+
+class PDF(Resource):
+    def __init__(self):
+        self.logger = create_logger("paper_pdf")
+        self.pdf_db = GLOBAL_CONFIG["mongodb"]["pdf_db"]
+        self.mongodb_db = mongo.client[self.pdf_db]
+        self.mongodb_fs = GridFS(self.mongodb_db)
+
+    def post(self, paper_id):
+        file = request.files["file"]
+
+        file_id = self.mongodb_fs.put(
+            file, content_type=file.content_type, filename=file.filename
+        )
+
+        paper = PaperModel.query.filter_by(paper_id=paper_id).first()
+        paper.source = str(file_id)
+        paper.save_to_db()
+
+        response = {"code": 0, "error_msg": "", "data": {"file_id": str(file_id)}}
+
+        return response, 200
+
+    def get(self, paper_id):
+        paper = PaperModel.query.filter_by(paper_id=paper_id).first()
+        file_id = paper.source
+
+        try:
+            file = self.mongodb_fs.get(ObjectId(file_id))
+            return Response(file, mimetype=file.content_type, direct_passthrough=True)
+        except NoFile:
+            return {"code": 1, "error_msg": "file not found", "data": {}}, 404
+        
+
+class PDFTest(Resource):
+    def __init__(self):
+        self.logger = create_logger("paper_pdf")
+        self.pdf_db = GLOBAL_CONFIG["mongodb"]["pdf_db"]
+        self.mongodb_db = mongo.client[self.pdf_db]
+        self.mongodb_fs = GridFS(self.mongodb_db)
+
+    def post(self):
+        file = request.files["file"]
+
+        file_id = self.mongodb_fs.put(
+            file, content_type=file.content_type, filename=file.filename
+        )
+
+        response = {"code": 0, "error_msg": "", "data": {"file_id": str(file_id)}}
+
+        return response, 200
+
+    def get(self):
+        parser = reqparse.RequestParser()
+        parser.add_argument("file_id", type=str, required=True)
+        data = parser.parse_args()
+
+        file_id = data["file_id"]
+
+        try:
+            file = self.mongodb_fs.get(ObjectId(file_id))
+            return Response(file, mimetype=file.content_type, direct_passthrough=True)
+        except NoFile:
+            return {"code": 1, "error_msg": "file not found", "data": {}}, 404
