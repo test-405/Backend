@@ -16,7 +16,7 @@ from config import GLOBAL_CONFIG
 
 app = Flask(__name__)
 app.config.from_object('config.Config')
-CORS(app)
+CORS(app, supports_credentials=True)
 
 db = mysql.init_db(app)
 if app.config['MONGODB_ON'] == 'True':
