@@ -314,14 +314,9 @@ class PDFTest(Resource):
         response = {"code": 0, "error_msg": "", "data": {"file_id": str(file_id)}}
 
         return response, 200
-
+    
     def get(self):
-        parser = reqparse.RequestParser()
-        parser.add_argument("file_id", type=str, required=True)
-        data = parser.parse_args()
-
-        file_id = data["file_id"]
-
+        file_id = request.args.get("file_id")
         try:
             file = self.mongodb_fs.get(ObjectId(file_id))
             return Response(file, mimetype=file.content_type, direct_passthrough=True)
