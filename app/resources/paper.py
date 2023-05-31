@@ -28,8 +28,9 @@ class Paper(Resource):
         
         # 根据library_id查询关联表，得到librarypaper_list，再根据paper_id查询paper表，得到paper_list
         librarypaper_list = LibraryPaperModel.query.filter_by(library_id=library_id).all()
-        paper_id_list = [each.json()['paper_id'] for each in librarypaper_list]
+        paper_id_list = [each.to_json()['paper_id'] for each in librarypaper_list]
         paper_list = PaperModel.query.filter(PaperModel.paper_id.in_(paper_id_list)).all()
+        paper_list = [paper.to_json() for paper in paper_list]
 
         # 如果查询提供了title，则对paper_list进行模糊匹配
         if title:
