@@ -5,7 +5,7 @@ from db import db
 from sqlalchemy.orm import sessionmaker
 from fuzzywuzzy import fuzz
 
-from models import CommentModel, PaperModel, PaperCommentModel
+from models import CommentModel, PaperModel, PaperCommentModel, UserCommentModel
 
 from utils.logz import create_logger
 
@@ -19,12 +19,29 @@ class Comment(Resource):
     def get(self):
         page_num = request.args.get("page_num", type=int)
         page_size = request.args.get("page_size", type=int)
+        paper_id = request.args.get("paper_id", type=int)
 
-        comment_list = CommentModel.query.all()
-        comment_list = [comment.to_json() for comment in comment_list]
+        # 找到paper_id对应的所有comment
+        paper_comment_list = PaperCommentModel.query.filter_by(paper_id=paper_id).all()
+        paper_comment_list = [each.to_json() for each in paper_comment_list]
+
+        # 找到所有comment以及对应的user
+        user_comment_list = UserCommentModel.query.filter(UserCommentModel.comment_id.in_([each['comment_id'] for each in paper_comment_list])).all()
+        user_comment_list = [each.to_json() for each in user_comment_list]
+
+        # 找到所有comment
+        comment_list = CommentModel.query.filter(CommentModel.comment_id.in_([each['comment_id'] for each in paper_comment_list])).all()
+        comment_list = [each.to_json() for each in comment_list]
+        
+        # # response里面的comments添加user属性
+        # for comment in comment_list:
+        #     for user_comment in user_comment_list:
+        #         if comment['comment_id'] == user_comment['comment_id']:
+        #             comment['user'] = user_comment['user_id']
+        #             break
 
         comment_list = comment_list[: (page_num * page_size)]
-        response = {"code": 0, "error_msg": "", "data": {"comments": comment_list}}
+        response = {"code": 0, "error_msg": "", "data": {"comments": comment_list, "user_comments": user_comment_list}}
         return response, 200
 
     # 添加论文评论
@@ -59,6 +76,9 @@ class Comment(Resource):
 
         paper_comment = PaperCommentModel(paper_id=data['paper_id'], comment_id=comment.comment_id)
         paper_comment.save_to_db()
+
+        user_comment = UserCommentModel(user_id=uid, comment_id=comment.comment_id)
+        user_comment.save_to_db()
 
     # 删除论文评论
     @jwt_required()
