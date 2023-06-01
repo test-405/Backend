@@ -6,13 +6,15 @@ class UserCommentModel(db.Model):
 
     user_comment_id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, nullable=False)
+    username = db.Column(db.String(80), nullable=False)
     comment_id = db.Column(db.Integer, nullable=False)
 
     def to_json(self):
         return {
             'user_comment_id': self.user_comment_id,
             'user_id': self.user_id,
-            'commnet_id': self.comment_id
+            'username': self.username,
+            'comment_id': self.comment_id
         }
     
     @classmethod

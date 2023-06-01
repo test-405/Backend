@@ -5,7 +5,7 @@ from db import db
 from sqlalchemy.orm import sessionmaker
 from fuzzywuzzy import fuzz
 
-from models import CommentModel, PaperModel, PaperCommentModel, UserCommentModel
+from models import UserModel, CommentModel, PaperModel, PaperCommentModel, UserCommentModel
 
 from utils.logz import create_logger
 
@@ -33,15 +33,17 @@ class Comment(Resource):
         comment_list = CommentModel.query.filter(CommentModel.comment_id.in_([each['comment_id'] for each in paper_comment_list])).all()
         comment_list = [each.to_json() for each in comment_list]
         
-        # # response里面的comments添加user属性
-        # for comment in comment_list:
-        #     for user_comment in user_comment_list:
-        #         if comment['comment_id'] == user_comment['comment_id']:
-        #             comment['user'] = user_comment['user_id']
-        #             break
+        # response里面的comments添加user属性
+        for comment in comment_list:
+            for user_comment in user_comment_list:
+                #self.logger.info(user_comment)
+                if comment['comment_id'] == user_comment['comment_id']:
+                    comment['user_id'] = user_comment['user_id']
+                    comment['username'] = user_comment['username']
+                    break
 
         comment_list = comment_list[: (page_num * page_size)]
-        response = {"code": 0, "error_msg": "", "data": {"comments": comment_list, "user_comments": user_comment_list}}
+        response = {"code": 0, "error_msg": "", "data": {"comments": comment_list}}
         return response, 200
 
     # 添加论文评论
@@ -59,6 +61,8 @@ class Comment(Resource):
 
         # uid relation with comment TODO
         uid = get_jwt_identity()
+        user = UserModel.query.filter_by(user_id=uid).first()
+        _username = user.to_json()['username']
         self.logger.info("User {} is creating a comment".format(uid))
 
         # 检查paper_id是否存在
@@ -77,7 +81,8 @@ class Comment(Resource):
         paper_comment = PaperCommentModel(paper_id=data['paper_id'], comment_id=comment.comment_id)
         paper_comment.save_to_db()
 
-        user_comment = UserCommentModel(user_id=uid, comment_id=comment.comment_id)
+        
+        user_comment = UserCommentModel(user_id=uid, username=_username, comment_id=comment.comment_id)
         user_comment.save_to_db()
 
     # 删除论文评论
@@ -93,6 +98,7 @@ class Comment(Resource):
             try:
                 comment = session.query(CommentModel).filter_by(comment_id=comment_id).first()
                 paper_comment = session.query(PaperCommentModel).filter_by(comment_id=comment_id).first()
+                user_comment = session.query(UserCommentModel).filter_by(comment_id=comment_id).first()
                 if comment is None:
                     response = {
                         "code": 1,
@@ -102,6 +108,7 @@ class Comment(Resource):
                     return response, 403
                 session.delete(comment)
                 session.delete(paper_comment)
+                session.delete(user_comment)
         
             except Exception as e:
                 self.logger.error(str(e))
