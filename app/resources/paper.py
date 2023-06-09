@@ -20,7 +20,10 @@ class Paper(Resource):
 
     # 查询论文
     # library_id(required), page_num(required), page_size(required), title, ...
+    @jwt_required()
     def get(self):
+        uid = get_jwt_identity()
+
         library_id = request.args.get("library_id", type=int)
         page_num = request.args.get("page_num", type=int)
         page_size = request.args.get("page_size", type=int)
@@ -37,6 +40,16 @@ class Paper(Resource):
             for paper in paper_list:
                 paper["ratio"] = fuzz.ratio(title, paper["title"])
             paper_list = sorted(paper_list, key=lambda x: x["ratio"], reverse=True)
+
+        user_paper_list = UserPaperModel.query.filter(UserPaperModel.paper_id.in_([each['paper_id'] for each in paper_list])).all()
+        user_paper_list = [each.to_json() for each in user_paper_list]
+
+        for paper in paper_list:
+            for user_paper in user_paper_list:
+                if paper['paper_id'] == user_paper['paper_id']:
+                    paper['is_yours'] = user_paper['user_id'] == uid
+                    break
+            paper['is_yours'] = False
         
         paper_list = paper_list[:(page_num) * page_size]
         response = {
@@ -55,11 +68,10 @@ class Paper(Resource):
     def post(self):
         parser = reqparse.RequestParser()
         parser.add_argument("library_id", type=int, required=True, help="This field cannot be blank.")
-        parser.add_argument("title", type=str, required=False)
+        parser.add_argument("title", type=str, required=True)
         parser.add_argument("authors", type=str, required=False)
         parser.add_argument("publisher", type=str, required=False)
         parser.add_argument("year", type=int, required=False)
-        parser.add_argument("source", type=str, required=False)
         data = parser.parse_args()
 
         uid = get_jwt_identity()
@@ -73,7 +85,7 @@ class Paper(Resource):
                 "error_msg": "Library {} does not exist".format(data["library_id"]),
                 "data": {}
             }
-            return response, 404
+            return response, 200
         
         # 检查library是否属于uid，或者是否是public
         library = LibraryModel.query.filter_by(library_id=data["library_id"]).first()
@@ -83,8 +95,7 @@ class Paper(Resource):
                 title=data["title"],
                 authors=data["authors"],
                 publisher=data["publisher"],
-                year=data["year"],
-                source=data["source"]
+                year=data["year"]
             )
             paper.save_to_db()
 
@@ -99,6 +110,13 @@ class Paper(Resource):
                 paper_id=paper.paper_id
             )
             user_paper.save_to_db()
+
+            response = {
+                "code" : 0,
+                "error_msg": "",
+                "data": paper.to_json()
+            }
+            return response, 200
         # 如果library不属于uid，也不是public
         else:
             response = {
@@ -106,7 +124,7 @@ class Paper(Resource):
                 "error_msg": "Library {} is not public".format(data["library_id"]),
                 "data": {}
             }
-            return response, 403
+            return response, 200
 
     
     # 修改论文

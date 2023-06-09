@@ -83,7 +83,7 @@ class Library(Resource):
                 "error_msg": "User is not authorized to modify this library",
                 "data": {},
             }
-            return response, 403
+            return response, 200
 
         Session = sessionmaker(bind=db.engine)
         with Session() as session:
@@ -106,7 +106,7 @@ class Library(Resource):
                     "error_msg": "Failed to update library",
                     "data": library.to_json(),
                 }
-                return response, 500
+                return response, 200
             else:
                 response = {"code": 0, "error_msg": "", "data": library.to_json()}
                 session.commit()
@@ -132,7 +132,7 @@ class Library(Resource):
                         "error_msg": "User is not authorized to delete this library",
                         "data": {},
                     }
-                    return response, 403
+                    return response, 200
 
                 library = (
                     session.query(LibraryModel).filter_by(library_id=library_id).first()
@@ -147,7 +147,7 @@ class Library(Resource):
                     "error_msg": "Failed to delete library",
                     "data": {},
                 }
-                return response, 500
+                return response, 200
             else:
                 response = {
                     "code": 0,
