@@ -12,7 +12,7 @@ class UserPaperModel(db.Model):
         return {
             'user_paper_id': self.user_paper_id,
             'user_id': self.user_id,
-            'library_id': self.paper_id
+            'paper_id': self.paper_id
         }
     
     @classmethod
