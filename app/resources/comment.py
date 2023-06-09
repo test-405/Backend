@@ -16,7 +16,10 @@ class Comment(Resource):
 
     # 获取论文评论列表
     # page_num(required), page_size(required)
+    @jwt_required()
     def get(self):
+        uid = get_jwt_identity()
+
         page_num = request.args.get("page_num", type=int)
         page_size = request.args.get("page_size", type=int)
         paper_id = request.args.get("paper_id", type=int)
@@ -36,10 +39,10 @@ class Comment(Resource):
         # response里面的comments添加user属性
         for comment in comment_list:
             for user_comment in user_comment_list:
-                #self.logger.info(user_comment)
                 if comment['comment_id'] == user_comment['comment_id']:
                     comment['user_id'] = user_comment['user_id']
                     comment['username'] = user_comment['username']
+                    comment['is_yours'] = user_comment['user_id'] == uid
                     break
 
         comment_list = comment_list[: (page_num * page_size)]
@@ -73,7 +76,7 @@ class Comment(Resource):
                 "error_msg": "There is no paper with id {}".format(data["paper_id"]),
                 "data": {}
             }
-            return response, 404
+            return response, 200
         
         comment = CommentModel(content=data["content"], time=datetime.now(), is_markdown=False)
         comment.save_to_db()
@@ -84,6 +87,17 @@ class Comment(Resource):
         
         user_comment = UserCommentModel(user_id=uid, username=_username, comment_id=comment.comment_id)
         user_comment.save_to_db()
+
+        response =  {
+            "code": 0,
+            "error_msg": "",
+            "data": {
+                "id": comment.comment_id,
+                "content": comment.content,
+                "time": comment.time.isoformat(),
+            }
+        }
+        return response, 200
 
     # 删除论文评论
     @jwt_required()
@@ -105,7 +119,7 @@ class Comment(Resource):
                         "error_msg": "There is no comment with id {}".format(comment_id),
                         "data": {},
                     }
-                    return response, 403
+                    return response, 200
                 session.delete(comment)
                 session.delete(paper_comment)
                 session.delete(user_comment)
@@ -118,7 +132,7 @@ class Comment(Resource):
                     "error_msg": "Failed to delete comment with id {}".format(comment_id),
                     "data": {},
                 }
-                return response, 500
+                return response, 200
             else:
                 response = {
                     "code": 0,

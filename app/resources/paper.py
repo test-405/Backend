@@ -242,7 +242,7 @@ class PDF(Resource):
             file = self.mongodb_fs.get(ObjectId(file_id))
             return Response(file, mimetype=file.content_type, direct_passthrough=True)
         except NoFile:
-            return {"code": 1, "error_msg": "file not found", "data": {}}, 404
+            return {"code": 1, "error_msg": "file not found", "data": {}}, 200
         
 
 class PDFTest(Resource):
